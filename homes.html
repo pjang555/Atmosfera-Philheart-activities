@@ -1,0 +1,213 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employee Information System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  />
+  <style>
+    .scrollbar-thin::-webkit-scrollbar {
+      height: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+  <div class="w-full max-w-7xl bg-white rounded-md shadow-md p-4">
+    <h1 class="text-center font-extrabold text-gray-900 text-xl md:text-2xl mb-4 select-none">
+      Employee Information System
+    </h1>
+    <div class="flex justify-between items-center mb-2">
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="Search"
+        class="border border-gray-300 rounded px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
+      <button
+        id="addBtn"
+        class="text-xs italic font-semibold text-gray-600 hover:text-gray-900 focus:outline-none"
+        aria-label="Add new employee"
+      >
+        ADD
+      </button>
+    </div>
+    <div class="overflow-x-auto scrollbar-thin">
+      <table id="employeeTable" class="w-full border border-gray-300 text-gray-700 text-sm md:text-base">
+        <thead>
+          <tr class="bg-gray-100 text-gray-900 font-semibold text-left">
+            <th class="border border-gray-300 px-3 py-2 min-w-[90px]">Employee ID</th>
+            <th class="border border-gray-300 px-3 py-2 min-w-[140px]">Last Name</th>
+            <th class="border border-gray-300 px-3 py-2 min-w-[140px]">First Name</th>
+            <th class="border border-gray-300 px-3 py-2 min-w-[120px]">Position</th>
+            <th class="border border-gray-300 px-3 py-2 min-w-[100px]">Office</th>
+            <th class="border border-gray-300 px-3 py-2 min-w-[140px]">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Rows will be dynamically inserted here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Initial employees data (default)
+    const defaultEmployees = [
+      { id: "001", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "02", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "03", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "04", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "05", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "06", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "07", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "08", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "09", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" },
+      { id: "10", lastName: "Dela Cruz", firstName: "Juan", position: "Governor", office: "Dolores" }
+    ];
+
+    const tableBody = document.getElementById("tableBody");
+    const addBtn = document.getElementById("addBtn");
+    const searchInput = document.getElementById("searchInput");
+
+    // Load employees from localStorage or use default
+    function loadEmployees() {
+      const stored = localStorage.getItem("employees");
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {
+          return [...defaultEmployees];
+        }
+      }
+      return [...defaultEmployees];
+    }
+
+    // Save employees to localStorage
+    function saveEmployees(employees) {
+      localStorage.setItem("employees", JSON.stringify(employees));
+    }
+
+    // Render employees in table
+    function renderEmployees(employees) {
+      tableBody.innerHTML = "";
+      employees.forEach((emp, index) => {
+        const tr = document.createElement("tr");
+        tr.className = index % 2 === 0 ? "even:bg-white" : "odd:bg-gray-50";
+
+        tr.innerHTML = `
+          <td class="border border-gray-300 px-3 py-2">${emp.id}</td>
+          <td class="border border-gray-300 px-3 py-2">${emp.lastName}</td>
+          <td class="border border-gray-300 px-3 py-2 text-blue-600 cursor-pointer hover:underline">${emp.firstName}</td>
+          <td class="border border-gray-300 px-3 py-2">${emp.position}</td>
+          <td class="border border-gray-300 px-3 py-2">${emp.office}</td>
+          <td class="border border-gray-300 px-3 py-2 space-x-2">
+            <button class="bg-cyan-400 text-white text-xs px-3 py-1 rounded hover:bg-cyan-500 focus:outline-none edit-btn" data-index="${index}">Edit</button>
+            <button class="bg-green-600 text-white text-xs px-3 py-1 rounded hover:bg-green-700 focus:outline-none delete-btn" data-index="${index}">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    // Filter employees by search term
+    function filterEmployees(employees, term) {
+      if (!term) return employees;
+      term = term.toLowerCase();
+      return employees.filter(emp =>
+        emp.id.toLowerCase().includes(term) ||
+        emp.lastName.toLowerCase().includes(term) ||
+        emp.firstName.toLowerCase().includes(term) ||
+        emp.position.toLowerCase().includes(term) ||
+        emp.office.toLowerCase().includes(term)
+      );
+    }
+
+    // Prompt user to add new employee
+    function addEmployee(employees) {
+      const id = prompt("Enter Employee ID:", "");
+      if (id === null || id.trim() === "") return null;
+      const lastName = prompt("Enter Last Name:", "");
+      if (lastName === null || lastName.trim() === "") return null;
+      const firstName = prompt("Enter First Name:", "");
+      if (firstName === null || firstName.trim() === "") return null;
+      const position = prompt("Enter Position:", "");
+      if (position === null || position.trim() === "") return null;
+      const office = prompt("Enter Office:", "");
+      if (office === null || office.trim() === "") return null;
+
+      return { id: id.trim(), lastName: lastName.trim(), firstName: firstName.trim(), position: position.trim(), office: office.trim() };
+    }
+
+    // Prompt user to edit employee
+    function editEmployee(employee) {
+      const id = prompt("Edit Employee ID:", employee.id);
+      if (id === null || id.trim() === "") return null;
+      const lastName = prompt("Edit Last Name:", employee.lastName);
+      if (lastName === null || lastName.trim() === "") return null;
+      const firstName = prompt("Edit First Name:", employee.firstName);
+      if (firstName === null || firstName.trim() === "") return null;
+      const position = prompt("Edit Position:", employee.position);
+      if (position === null || position.trim() === "") return null;
+      const office = prompt("Edit Office:", employee.office);
+      if (office === null || office.trim() === "") return null;
+
+      return { id: id.trim(), lastName: lastName.trim(), firstName: firstName.trim(), position: position.trim(), office: office.trim() };
+    }
+
+    // Main app logic
+    function main() {
+      let employees = loadEmployees();
+      renderEmployees(employees);
+
+      // Add employee button
+      addBtn.addEventListener("click", () => {
+        const newEmp = addEmployee(employees);
+        if (newEmp) {
+          employees.push(newEmp);
+          saveEmployees(employees);
+          renderEmployees(filterEmployees(employees, searchInput.value));
+        }
+      });
+
+      // Delegate edit and delete buttons
+      tableBody.addEventListener("click", (e) => {
+        if (e.target.classList.contains("delete-btn")) {
+          const index = parseInt(e.target.dataset.index);
+          if (index >= 0 && index < employees.length) {
+            if (confirm("Are you sure you want to delete this employee?")) {
+              employees.splice(index, 1);
+              saveEmployees(employees);
+              renderEmployees(filterEmployees(employees, searchInput.value));
+            }
+          }
+        } else if (e.target.classList.contains("edit-btn")) {
+          const index = parseInt(e.target.dataset.index);
+          if (index >= 0 && index < employees.length) {
+            const editedEmp = editEmployee(employees[index]);
+            if (editedEmp) {
+              employees[index] = editedEmp;
+              saveEmployees(employees);
+              renderEmployees(filterEmployees(employees, searchInput.value));
+            }
+          }
+        }
+      });
+
+      // Search input filter
+      searchInput.addEventListener("input", () => {
+        const filtered = filterEmployees(employees, searchInput.value);
+        renderEmployees(filtered);
+      });
+    }
+
+    main();
+  </script>
+</body>
+</html>
